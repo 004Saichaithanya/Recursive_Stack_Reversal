@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recursive Stack Reversal Simulation</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --text-color: #c9d1d9;
+            --border-color: #30363d;
+            --btn-bg: #238636;
+            --btn-hover: #2ea043;
+            --stack-bg: #21262d;
+            --frame-reverse: #1f6feb;
+            --frame-insert: #238636;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .controls {
+            background-color: #161b22;
+            padding: 15px 25px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        input {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background: #010409;
+            color: white;
+            font-size: 14px;
+            width: 150px;
+        }
+
+        button {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+            background-color: var(--btn-bg);
+            color: white;
+        }
+
+        button:hover { background-color: var(--btn-hover); }
+        button:disabled { background-color: #21262d; cursor: not-allowed; color: #8b949e; }
+        
+        #nextBtn { background-color: #1f6feb; }
+        #nextBtn:hover { background-color: #388bfd; }
+
+        .workspace {
+            display: flex;
+            gap: 40px;
+            width: 900px;
+            height: 450px;
+            margin-bottom: 20px;
+        }
+
+        .panel {
+            flex: 1;
+            background-color: #161b22;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        h3 { margin-top: 0; text-align: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;}
+
+        /* Stack Visuals */
+        .stack-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            flex-grow: 1;
+            gap: 5px;
+            border-left: 4px solid var(--border-color);
+            border-right: 4px solid var(--border-color);
+            border-bottom: 4px solid var(--border-color);
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            padding: 10px;
+            width: 120px;
+            margin: 0 auto;
+        }
+
+        .stack-item {
+            width: 100%;
+            background-color: #8957e5;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 18px;
+            animation: popIn 0.3s ease-out;
+        }
+
+        /* Call Stack Frames */
+        .call-stack-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .frame {
+            padding: 10px;
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+            animation: slideIn 0.3s ease-out;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .frame.reverse { background-color: rgba(31, 111, 235, 0.2); border-left: 4px solid var(--frame-reverse); }
+        .frame.insert { background-color: rgba(35, 134, 54, 0.2); border-left: 4px solid var(--frame-insert); }
+        .frame-header { font-weight: bold; margin-bottom: 5px; font-family: monospace; font-size: 15px;}
+        .frame-vars { color: #a5d6ff; font-family: monospace; }
+
+        #logWindow {
+            width: 860px;
+            height: 120px;
+            background-color: #010409;
+            color: #8b949e;
+            font-family: monospace;
+            font-size: 13px;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            overflow-y: auto;
+        }
+        .log-entry { margin-bottom: 6px; }
+        .log-highlight { color: #fff; font-weight: bold; }
+
+        @keyframes popIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Reverse Stack Simulator</h2>
+    
+    <div class="controls">
+        <label>Initial Stack (Bottom to Top):</label>
+        <input type="text" id="stackInput" value="1, 2, 3">
+        <button id="startBtn" onclick="startSimulation()">Start Simulation</button>
+        <button id="nextBtn" onclick="nextStep()" disabled>Next Step</button>
+    </div>
+
+    <div class="workspace">
+        <div class="panel">
+            <h3>Call Stack (Memory)</h3>
+            <div class="call-stack-container" id="callStackDom"></div>
+        </div>
+        <div class="panel">
+            <h3>Main Stack</h3>
+            <div class="stack-container" id="mainStackDom"></div>
+        </div>
+    </div>
+
+    <div id="logWindow">
+        <div class="log-entry">Initialize simulation to view traversal...</div>
+    </div>
+
+    <script>
+        let mainStack = [];
+        let callStackFrames = [];
+        let resolveNextStep = null;
+        let simulationRunning = false;
+        let frameCounter = 0;
+
+        // --- UI Updaters ---
+        const mainStackDom = document.getElementById('mainStackDom');
+        const callStackDom = document.getElementById('callStackDom');
+        const logWindow = document.getElementById('logWindow');
+
+        function addLog(text, highlight = false) {
+            const div = document.createElement('div');
+            div.className = `log-entry ${highlight ? 'log-highlight' : ''}`;
+            div.innerText = `> ${text}`;
+            logWindow.appendChild(div);
+            logWindow.scrollTop = logWindow.scrollHeight;
+        }
+
+        function renderVisuals() {
+            // Render Main Stack (Top element is at the top of the container visually)
+            mainStackDom.innerHTML = '';
+            for (let i = mainStack.length - 1; i >= 0; i--) {
+                const div = document.createElement('div');
+                div.className = 'stack-item';
+                div.innerText = mainStack[i];
+                mainStackDom.appendChild(div);
+            }
+
+            // Render Call Stack (Most recent frame at the top)
+            callStackDom.innerHTML = '';
+            for (let i = callStackFrames.length - 1; i >= 0; i--) {
+                const frame = callStackFrames[i];
+                const div = document.createElement('div');
+                div.className = `frame ${frame.type}`;
+                div.innerHTML = `
+                    <div class="frame-header">${frame.name}</div>
+                    <div class="frame-vars">${frame.vars}</div>
+                `;
+                callStackDom.appendChild(div);
+            }
+        }
+
+        function updateFrame(id, newVars) {
+            const frame = callStackFrames.find(f => f.id === id);
+            if (frame) frame.vars = newVars;
+        }
+
+        // --- Step Controller ---
+        function waitForNextStep() {
+            return new Promise(resolve => {
+                resolveNextStep = resolve;
+                document.getElementById('nextBtn').disabled = false;
+            });
+        }
+
+        function nextStep() {
+            if (resolveNextStep) {
+                document.getElementById('nextBtn').disabled = true;
+                let res = resolveNextStep;
+                resolveNextStep = null;
+                res();
+            }
+        }
+
+        // --- Recursive Algorithms (Mirrors Java) ---
+
+        async function insertAtBottom(x) {
+            let fid = frameCounter++;
+            callStackFrames.push({ id: fid, type: 'insert', name: `insertAtBottom(st, ${x})`, vars: 'Checking if empty...' });
+            addLog(`Called insertAtBottom(st, ${x}).`);
+            renderVisuals(); await waitForNextStep();
+
+            if (mainStack.length === 0) {
+                mainStack.push(x);
+                updateFrame(fid, `Base case met! Pushing target ${x}.`);
+                addLog(`Stack is empty. Pushed ${x} to the bottom. Returning.`, true);
+                renderVisuals(); await waitForNextStep();
+                callStackFrames.pop();
+                return;
+            }
+
+            let top = mainStack.pop();
+            updateFrame(fid, `Local memory: top = ${top} | Paused`);
+            addLog(`Popped ${top} to make room. Calling insertAtBottom(st, ${x}) again.`);
+            renderVisuals(); await waitForNextStep();
+
+            await insertAtBottom(x);
+
+            mainStack.push(top);
+            updateFrame(fid, `Re-pushing top = ${top}`);
+            addLog(`Returned to frame. Re-pushing ${top} back on top.`);
+            renderVisuals(); await waitForNextStep();
+            
+            callStackFrames.pop();
+        }
+
+        async function reverseStack() {
+            let fid = frameCounter++;
+            callStackFrames.push({ id: fid, type: 'reverse', name: 'reverseStack(st)', vars: 'Checking if empty...' });
+            addLog('Called reverseStack(st).');
+            renderVisuals(); await waitForNextStep();
+
+            if (mainStack.length === 0) {
+                updateFrame(fid, 'Base case met! Returning.');
+                addLog('Stack is empty! Base case reached. Returning.');
+                renderVisuals(); await waitForNextStep();
+                callStackFrames.pop();
+                return;
+            }
+
+            let ele = mainStack.pop();
+            updateFrame(fid, `Local memory: ele = ${ele} | Paused`);
+            addLog(`Popped ${ele} and storing it in memory. Calling reverseStack(st) again.`);
+            renderVisuals(); await waitForNextStep();
+
+            await reverseStack();
+
+            updateFrame(fid, `Local memory: ele = ${ele} | Calling insertAtBottom...`);
+            addLog(`reverseStack finished. Now calling insertAtBottom(st, ${ele}).`);
+            renderVisuals(); await waitForNextStep();
+
+            await insertAtBottom(ele);
+
+            updateFrame(fid, `Done inserting ${ele}. Returning.`);
+            addLog(`Finished processing element ${ele}. Returning.`);
+            renderVisuals(); await waitForNextStep();
+
+            callStackFrames.pop();
+        }
+
+        // --- App Initialization ---
+        async function startSimulation() {
+            if (simulationRunning) return;
+            
+            // Parse Input
+            const input = document.getElementById('stackInput').value;
+            mainStack = input.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+            
+            if(mainStack.length === 0) {
+                alert("Please enter valid numbers.");
+                return;
+            }
+
+            // Reset UI
+            simulationRunning = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stackInput').disabled = true;
+            callStackFrames = [];
+            logWindow.innerHTML = '';
+            
+            addLog(`Starting simulation with Stack: [${mainStack.join(', ')}] (Rightmost is Top)`);
+            renderVisuals();
+            await waitForNextStep();
+
+            // Run Algo
+            await reverseStack();
+
+            addLog(`Simulation Complete! Stack is fully reversed.`, true);
+            renderVisuals();
+            
+            // Clean up
+            simulationRunning = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stackInput').disabled = false;
+            document.getElementById('startBtn').innerText = "Restart Simulation";
+            document.getElementById('nextBtn').disabled = true;
+        }
+    </script>
+</body>
+</html>
